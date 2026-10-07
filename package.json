@@ -1,0 +1,16 @@
+{
+  "name": "plantpal",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Plant Pal React prototype",
+  "packageManager": "pnpm@12.9.1",
+  "engines": {
+    "node": "^20.19.0 || ^22.13.0 || >=24"
+  },
+  "scripts": {
+    "dev": "pnpm --dir plant-nursery dev",
+    "build": "pnpm --dir plant-nursery build",
+    "lint": "pnpm --dir plant-nursery lint",
+    "preview": "pnpm --dir plant-nursery preview"
+  }
+}

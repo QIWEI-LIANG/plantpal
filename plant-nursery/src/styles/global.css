@@ -1,0 +1,269 @@
+:root {
+  font-family: 'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif;
+  color: #253d30;
+  background: #f8faf7;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --green: #365f43;
+  --muted: #7b877d;
+  --border: #e5eae2;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  min-width: 320px;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+  color: inherit;
+  transition:
+    background 0.18s,
+    transform 0.18s,
+    box-shadow 0.18s;
+}
+button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #87a977;
+  outline-offset: 4px;
+}
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+h1 {
+  font-size: clamp(26px, 2.4vw, 34px);
+  line-height: 1.4;
+  letter-spacing: -0.9px;
+  font-weight: 650;
+}
+h2 {
+  font-size: 19px;
+  font-weight: 650;
+  line-height: 1.5;
+}
+h3 {
+  font-size: 16px;
+  font-weight: 600;
+}
+p {
+  line-height: 1.8;
+}
+small {
+  font-size: 12px;
+}
+svg {
+  flex-shrink: 0;
+}
+input:not([type='checkbox']):not([type='radio']):not([type='file']),
+textarea,
+select {
+  width: 100%;
+  border: 1px solid #dae2d5;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #fff;
+  color: #253d30;
+}
+input::placeholder,
+textarea::placeholder {
+  color: #949d91;
+}
+textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+input[type='radio'],
+input[type='checkbox'] {
+  accent-color: var(--green);
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+}
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 12px 18px;
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-weight: 550;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.button.primary {
+  background: var(--green);
+  color: #fff;
+  box-shadow: 0 3px 8px #365f4310;
+}
+.button.primary:hover:not(:disabled) {
+  background: #284c34;
+  transform: translateY(-1px);
+}
+.button.secondary {
+  background: #fff;
+  border-color: #dce4d7;
+}
+.button.secondary:hover:not(:disabled) {
+  background: #eef3e9;
+}
+.full-width {
+  width: 100%;
+}
+.text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  padding: 5px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--green);
+  background: transparent;
+  text-align: left;
+}
+.text-button:hover {
+  color: #77935f;
+}
+.icon-button {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: transparent;
+  border-radius: 9px;
+}
+.icon-button:hover {
+  background: #e7eee2;
+}
+.muted {
+  color: var(--muted);
+  font-size: 13px;
+}
+.eyebrow {
+  color: #87957b;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-bottom: 9px;
+}
+.tag,
+.plant-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: #edf3e8;
+  color: #537348;
+  line-height: 1.4;
+}
+.tag.amber,
+.plant-badge.amber {
+  background: #f8efdb;
+  color: #8c7445;
+}
+.sage {
+  background: #e0eadb;
+  color: #4a6740;
+}
+.peach {
+  background: #f4e5db;
+  color: #ac7b57;
+}
+.cream {
+  background: #f3eddc;
+  color: #a18c4f;
+}
+.lavender {
+  background: #ece7f1;
+  color: #8e7ca2;
+}
+.scientific {
+  font-size: 11px;
+  font-style: italic;
+  color: #86917d;
+  margin: 5px 0 13px;
+}
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #edf2e7;
+  color: #58704c;
+  border: 1px solid #e1e9d9;
+  padding: 17px 20px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.8;
+  margin-bottom: 25px;
+}
+.notice svg {
+  margin-top: 3px;
+}
+.small-print {
+  color: #8c9587;
+  font-size: 11px;
+  line-height: 1.8;
+  margin: 18px 0;
+}
+.empty-state {
+  text-align: center;
+  padding: 45px 22px;
+  color: #809174;
+  background: #f0f4eb;
+  border-radius: 14px;
+  margin: 15px 0 25px;
+}
+.empty-state h3 {
+  margin: 12px 0 6px;
+  color: var(--green);
+}
+.empty-state p {
+  font-size: 13px;
+  margin-bottom: 18px;
+}
+.skip-link {
+  position: fixed;
+  left: 15px;
+  top: -60px;
+  z-index: 30;
+  background: var(--green);
+  color: #fff;
+  padding: 12px;
+}
+.skip-link:focus {
+  top: 15px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

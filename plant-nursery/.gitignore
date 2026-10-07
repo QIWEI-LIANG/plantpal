@@ -1,0 +1,38 @@
+# Dependencies and package-manager caches
+node_modules/
+.pnpm-store/
+.npm/
+
+# Build output and tool caches
+dist/
+dist-ssr/
+coverage/
+.vite/
+.cache/
+.eslintcache
+*.tsbuildinfo
+
+# Environment variables (keep sanitized examples)
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.local
+
+# Logs
+logs/
+*.log
+
+# Editor and operating-system files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*~
