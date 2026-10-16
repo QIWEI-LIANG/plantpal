@@ -93,13 +93,13 @@ python manage.py runserver 127.0.0.1:8000
 
 环境变量在 `backend/.env` 配置，由 `python-dotenv` 加载；进程环境变量优先。模板 `backend/.env.example` 不含真实密钥：
 
-| 变量 | 用途 |
-| --- | --- |
-| `DJANGO_SECRET_KEY` | 必填，首次生成后保持稳定，不提交 Git |
-| `DJANGO_DEBUG` | 本地 HTTP 开发使用 `True`；也影响 Cookie Secure 设置 |
-| `DJANGO_ALLOWED_HOSTS` | 默认 `127.0.0.1,localhost` |
-| `DJANGO_CSRF_TRUSTED_ORIGINS` | 开发端口 5173、预览端口 4173 的 Origin，逗号分隔 |
-| `DJANGO_DB_NAME` | 默认 `db.sqlite3`，相对路径从 `backend/` 解析；也支持绝对路径 |
+| 变量                            | 用途                                                              |
+| ------------------------------- | ----------------------------------------------------------------- |
+| `DJANGO_SECRET_KEY`           | 必填，首次生成后保持稳定，不提交 Git                              |
+| `DJANGO_DEBUG`                | 本地 HTTP 开发使用 `True`；也影响 Cookie Secure 设置            |
+| `DJANGO_ALLOWED_HOSTS`        | 默认 `127.0.0.1,localhost`                                      |
+| `DJANGO_CSRF_TRUSTED_ORIGINS` | 开发端口 5173、预览端口 4173 的 Origin，逗号分隔                  |
+| `DJANGO_DB_NAME`              | 默认 `db.sqlite3`，相对路径从 `backend/` 解析；也支持绝对路径 |
 
 保留现有数据库，更新模型后执行迁移；不要用删除数据库解决迁移问题。生产环境需要另外配置 HTTPS、静态文件和部署服务。
 
@@ -185,16 +185,16 @@ Set-Location .\backend
 
 ## 常见问题
 
-| 问题 | 处理 |
-| --- | --- |
-| 根目录安装后前端缺依赖 | 还需执行 `pnpm --dir plant-nursery install --frozen-lockfile` |
+| 问题                            | 处理                                                                       |
+| ------------------------------- | -------------------------------------------------------------------------- |
+| 根目录安装后前端缺依赖          | 还需执行 `pnpm --dir plant-nursery install --frozen-lockfile`            |
 | 移动后 pip/虚拟环境仍引用旧位置 | 保留数据和 `.env`，根据 `requirements-lock.txt` 在新位置重建 `.venv` |
-| 缺少 Django / DRF | 确认使用 `backend/.venv` 的 Python，并安装锁定依赖 |
-| 缺少密钥 | 按首次配置步骤填写 `.env`；不要公开真实配置 |
-| 403 CSRF | 统一使用 `127.0.0.1:5173` 并刷新；写请求需 CSRF Cookie 和请求头 |
-| API 502 / 服务不可用 | 确认 Django 在 `127.0.0.1:8000` 运行 |
-| 数据库缺表 | 在 backend 执行 `python manage.py migrate`，不要删除数据库 |
-| 品种列表为空 | 在 backend 执行 `python manage.py seed_plants` |
-| 端口被占用 | 先停止已有开发服务；Vite 启用 strictPort，不会自动换端口 |
+| 缺少 Django / DRF               | 确认使用 `backend/.venv` 的 Python，并安装锁定依赖                       |
+| 缺少密钥                        | 按首次配置步骤填写 `.env`；不要公开真实配置                              |
+| 403 CSRF                        | 统一使用 `127.0.0.1:5173` 并刷新；写请求需 CSRF Cookie 和请求头          |
+| API 502 / 服务不可用            | 确认 Django 在 `127.0.0.1:8000` 运行                                     |
+| 数据库缺表                      | 在 backend 执行 `python manage.py migrate`，不要删除数据库               |
+| 品种列表为空                    | 在 backend 执行 `python manage.py seed_plants`                           |
+| 端口被占用                      | 先停止已有开发服务；Vite 启用 strictPort，不会自动换端口                   |
 
 源码、配置、依赖清单、锁文件、迁移和 `.env.example` 应提交。依赖目录、dist、虚拟环境、缓存、日志、真实环境文件、密钥、SQLite 和用户上传目录均忽略。迁移时保留的本地旧环境 `.venv.migrated-backup/`、旧 npm 锁和历史验收材料 `.qa/` 不上传。

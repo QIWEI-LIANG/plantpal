@@ -39,17 +39,17 @@ pnpm preview
 
 ## 源码入口
 
-| 位置 | 职责 |
-| --- | --- |
-| `src/pages/HomePage.jsx` | 首页；修改首页从这里开始 |
-| `src/pages/` | 我的植物、指南、提醒、好友、论坛、设置、认证与站内提醒 |
-| `src/components/` | 布局、植物卡片、表单、详情、养护确认、逐盆授权、历史和分页 |
-| `src/services/api.js` | fetch、Session Cookie、CSRF、超时与错误 |
-| `src/hooks/` | 会话、异步请求、提交及植物数据 |
-| `src/data/` | 格式化与语言偏好；不再使用旧演示业务数据 |
-| `src/styles/` | global.css、app.css 和 fullstack.css |
-| `src/App.jsx` / `src/main.jsx` | 页面、视图、弹窗状态及入口 |
-| `vite.config.js` | 开发/预览端口与同源 `/api` 代理 |
+| 位置                               | 职责                                                       |
+| ---------------------------------- | ---------------------------------------------------------- |
+| `src/pages/HomePage.jsx`         | 首页；修改首页从这里开始                                   |
+| `src/pages/`                     | 我的植物、指南、提醒、好友、论坛、设置、认证与站内提醒     |
+| `src/components/`                | 布局、植物卡片、表单、详情、养护确认、逐盆授权、历史和分页 |
+| `src/services/api.js`            | fetch、Session Cookie、CSRF、超时与错误                    |
+| `src/hooks/`                     | 会话、异步请求、提交及植物数据                             |
+| `src/data/`                      | 格式化与语言偏好；不再使用旧演示业务数据                   |
+| `src/styles/`                    | global.css、app.css 和 fullstack.css                       |
+| `src/App.jsx` / `src/main.jsx` | 页面、视图、弹窗状态及入口                                 |
+| `vite.config.js`                 | 开发/预览端口与同源 `/api` 代理                          |
 
 文案使用 `t('中文', 'English')`；格式沿用 `.prettierrc.json` 的无分号、单引号和尾随逗号。业务数据以 Django/SQLite 为准；localStorage 只保存 `plantpal-language`，旧 `plant-pal-v1` 数据不会自动导入账户。
 
