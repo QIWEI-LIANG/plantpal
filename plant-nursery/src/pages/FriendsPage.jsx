@@ -1,33 +1,37 @@
 import { useState } from 'react'
 import PageHeading from '../components/PageHeading'
 import SearchField from '../components/SearchField'
-import Modal from '../components/Modal'
-import PlantArt from '../components/PlantArt'
-import Icon from '../components/Icon'
-import { friendData } from '../data/communityData'
-import { plantData } from '../data/plantData'
-import { localize } from '../data/formatters'
+import AsyncState from '../components/AsyncState'
+import FriendPlants from '../components/FriendPlants'
+import useApiResource from '../hooks/useApiResource'
+import useMutation from '../hooks/useMutation'
+import { api } from '../services/api'
 
-export default function FriendsPage({ t, language, state, onUpdate, notify }) {
+export default function FriendsPage({ t, language, onPlant }) {
   const [query, setQuery] = useState('')
   const [selectedFriend, setSelectedFriend] = useState(null)
-  const [reminderFeedback, setReminderFeedback] = useState('')
-  const friends = friendData.filter((friend) =>
-    `${friend.name} ${friend.bio.zh} ${friend.bio.en}`
-      .toLowerCase()
-      .includes(query.trim().toLowerCase()),
+  const [message, setMessage] = useState('')
+  const friendships = useApiResource('/friendships/', {
+    all: true,
+    poll: 15000,
+  })
+  const search = useApiResource(
+    query.trim().length >= 2
+      ? '/users/?search=' + encodeURIComponent(query.trim())
+      : null,
+    { all: true },
   )
-  function addFriend(friend) {
-    onUpdate((previous) => ({
-      ...previous,
-      friendIds: [...previous.friendIds, friend.id],
-    }))
-    notify(
-      t(
-        `已添加示例好友 ${friend.name}，仅保存在本机。`,
-        `Example friend ${friend.name} added on this device.`,
-      ),
-    )
+  const mutation = useMutation()
+  const relationships = friendships.data || []
+  const friends = relationships.filter((item) => item.status === 'accepted')
+  const pending = relationships.filter((item) => item.status === 'pending')
+
+  async function action(path, method, body, success) {
+    const result = await mutation.run(() => api(path, { method, body }))
+    if (result.ok) {
+      friendships.reload()
+      setMessage(success)
+    }
   }
   return (
     <>
@@ -35,8 +39,8 @@ export default function FriendsPage({ t, language, state, onUpdate, notify }) {
         eyebrow="GROW TOGETHER"
         title={t('我的好友', 'My friends')}
         description={t(
-          '分享绿色日常，也为朋友的植物多留一点心。',
-          'Share the green moments. Look out for your friends’ plants.',
+          '先成为好友，再由主人对每一盆植物明确授权。',
+          'Become friends, then ask the owner to share each plant explicitly.',
         )}
       />
       <div className="toolbar">
@@ -44,127 +48,201 @@ export default function FriendsPage({ t, language, state, onUpdate, notify }) {
           value={query}
           onChange={setQuery}
           placeholder={t(
-            '搜索好友，例如 Mia / Alex / Sam…',
-            'Search friends, e.g. Mia / Alex / Sam…',
+            '按用户名搜索，至少 2 个字符…',
+            'Search username, at least 2 characters…',
           )}
         />
         <span className="tag">
-          {t('示例好友目录', 'Example friend directory')}
+          {friends.length} {t('位好友', 'friends')}
         </span>
       </div>
-      <p className="small-print">
-        {t(
-          '好友和植物状态均为内置示例；添加好友不创建真实关系。',
-          'Friends and plant statuses are preset examples. Adding a friend creates no real connection.',
-        )}
-      </p>
-      <div className="friend-grid">
-        {friends.map((friend) => {
-          const connected = state.friendIds.includes(friend.id)
-          return (
-            <article className="panel friend-card" key={friend.id}>
-              <span className={`avatar large ${friend.color}`}>
-                {friend.initials}
-              </span>
-              <span className="tag">
-                {connected
-                  ? t('我的好友', 'Connected')
-                  : t('可以添加', 'Discover')}
-              </span>
-              <h2>{friend.name}</h2>
-              <p className="muted">{localize(friend.bio, language)}</p>
-              <div className="friend-plants">
-                {friend.plants.map((item) => (
-                  <span key={item.plantId}>
-                    <Icon name="plant" size={16} />
-                    {localize(
-                      plantData.find((plant) => plant.id === item.plantId).name,
-                      language,
-                    )}
-                  </span>
-                ))}
-              </div>
-              <button
-                className={`button ${connected ? 'secondary' : 'primary'} full-width`}
-                onClick={() => {
-                  if (connected) {
-                    setSelectedFriend(friend)
-                    setReminderFeedback('')
-                  } else {
-                    addFriend(friend)
-                  }
-                }}
-              >
-                <Icon name={connected ? 'plant' : 'plus'} />
-                {connected
-                  ? t('查看植物状态', 'View plant status')
-                  : t('添加示例好友', 'Add example friend')}
-              </button>
-            </article>
-          )
-        })}
-      </div>
-      {!friends.length && (
-        <div className="empty-state">
-          <h3>{t('没有找到示例好友', 'No example friends found')}</h3>
-          <p>{t('可以搜索 Mia、Alex 或 Sam。', 'Try Mia, Alex, or Sam.')}</p>
-        </div>
+      <AsyncState
+        loading={friendships.loading}
+        error={friendships.error}
+        onRetry={friendships.reload}
+        t={t}
+        language={language}
+      />
+      <AsyncState
+        loading={search.loading}
+        error={search.error}
+        onRetry={search.reload}
+        t={t}
+        language={language}
+      />
+      <AsyncState error={mutation.error} t={t} language={language} />
+      {message && (
+        <p className="notice" role="status">
+          {message}
+        </p>
       )}
-      {selectedFriend && (
-        <Modal
-          title={t(
-            `${selectedFriend.name} 的植物`,
-            `${selectedFriend.name}’s plants`,
-          )}
-          t={t}
-          onClose={() => setSelectedFriend(null)}
-        >
-          <p className="notice">
-            {t(
-              '以下为示例状态，提醒只展示本地模拟反馈，不会发送给任何人。',
-              'Example statuses only. Reminders show local feedback and are not sent to anyone.',
-            )}
-          </p>
-          {selectedFriend.plants.map((item) => {
-            const plant = plantData.find((entry) => entry.id === item.plantId)
-            return (
-              <div className="friend-plant-row" key={item.plantId}>
-                <span className="mini-art" style={{ background: plant.color }}>
-                  <PlantArt type={plant.type} />
-                </span>
-                <div>
-                  <h3>{localize(plant.name, language)}</h3>
-                  <span
-                    className={`tag ${item.status === 'check' ? 'amber' : ''}`}
+      {search.data && (
+        <section className="panel">
+          <h2>{t('搜索结果', 'Search results')}</h2>
+          {search.data.length ? (
+            search.data.map((user) => {
+              const relation = relationships.find(
+                (item) => item.user.id === user.id,
+              )
+              const connected = relation && relation.status !== 'rejected'
+              return (
+                <div className="scheduled-row" key={user.id}>
+                  <div>
+                    <strong>{user.nickname}</strong>
+                    <p className="muted">@{user.username}</p>
+                  </div>
+                  <button
+                    className="button secondary"
+                    disabled={
+                      mutation.pending ||
+                      connected ||
+                      friendships.loading ||
+                      Boolean(friendships.error)
+                    }
+                    onClick={() =>
+                      action(
+                        '/friendships/',
+                        'POST',
+                        { user_id: user.id },
+                        t(
+                          '好友申请已保存，请等待对方处理。',
+                          'Friend request saved. Waiting for a response.',
+                        ),
+                      )
+                    }
                   >
-                    {item.status === 'check'
-                      ? t('示例 · 待检查', 'Example · check due')
-                      : t('示例 · 最近已检查', 'Example · recently checked')}
-                  </span>
+                    {connected
+                      ? relation.status === 'accepted'
+                        ? t('已是好友', 'Already friends')
+                        : t('申请待处理', 'Request pending')
+                      : t('申请好友', 'Send request')}
+                  </button>
                 </div>
-                <button
-                  className="button secondary"
-                  onClick={() =>
-                    setReminderFeedback(
-                      t(
-                        `模拟提醒：已为 ${selectedFriend.name} 生成“请检查${plant.name.zh}”的本地反馈，未发送真实消息。`,
-                        `Demo reminder for ${selectedFriend.name}: “Please check ${plant.name.en}”. No message was sent.`,
-                      ),
-                    )
-                  }
-                >
-                  <Icon name="bell" size={16} />
-                  {t('发送提醒（模拟）', 'Remind (demo)')}
-                </button>
-              </div>
-            )
-          })}
-          {reminderFeedback && (
-            <p className="notice" role="status">
-              {reminderFeedback}
+              )
+            })
+          ) : (
+            <p className="empty-state">
+              {t('没有找到用户。', 'No users found.')}
             </p>
           )}
-        </Modal>
+        </section>
+      )}
+      {pending.length > 0 && (
+        <section className="panel">
+          <h2>{t('好友申请', 'Friend requests')}</h2>
+          {pending.map((item) => (
+            <div className="scheduled-row" key={item.id}>
+              <div>
+                <strong>
+                  {item.user.nickname} (@{item.user.username})
+                </strong>
+                <p className="muted">
+                  {item.incoming
+                    ? t('对方申请添加你为好友', 'Wants to be your friend')
+                    : t('等待对方接受', 'Waiting for their response')}
+                </p>
+              </div>
+              {item.incoming && (
+                <div className="row-actions">
+                  <button
+                    className="button primary"
+                    disabled={mutation.pending}
+                    onClick={() =>
+                      action(
+                        '/friendships/' + item.id + '/',
+                        'PATCH',
+                        { status: 'accepted' },
+                        t('已接受好友申请。', 'Friend request accepted.'),
+                      )
+                    }
+                  >
+                    {t('接受', 'Accept')}
+                  </button>
+                  <button
+                    className="button secondary"
+                    disabled={mutation.pending}
+                    onClick={() =>
+                      action(
+                        '/friendships/' + item.id + '/',
+                        'PATCH',
+                        { status: 'rejected' },
+                        t('已拒绝好友申请。', 'Friend request declined.'),
+                      )
+                    }
+                  >
+                    {t('拒绝', 'Decline')}
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </section>
+      )}
+      <div className="friend-grid">
+        {friends.map(({ user }) => (
+          <article className="panel friend-card" key={user.id}>
+            <span className="avatar large sage">
+              {user.nickname.slice(0, 2).toUpperCase()}
+            </span>
+            <h2>{user.nickname}</h2>
+            <p className="muted">@{user.username}</p>
+            <p className="small-print">
+              {t(
+                '只显示对方明确授权给你的植物。',
+                'Only plants this friend explicitly shares with you are visible.',
+              )}
+            </p>
+            <button
+              className="button secondary full-width"
+              onClick={() => setSelectedFriend(user)}
+            >
+              {t('查看已授权植物', 'View shared plants')}
+            </button>
+            <button
+              className="text-button"
+              disabled={mutation.pending}
+              onClick={() =>
+                action(
+                  '/notifications/',
+                  'POST',
+                  {
+                    recipient: user.id,
+                    message: t(
+                      '有空时请先检查植物的土壤和叶片，再决定是否需要养护。',
+                      'When you have time, check the soil and leaves before deciding on care.',
+                    ),
+                  },
+                  t(
+                    '站内提醒已保存，对方可在“站内提醒”中查看。',
+                    'Reminder saved. Your friend can read it in their inbox.',
+                  ),
+                )
+              }
+            >
+              {t('发送站内养护提醒', 'Send care reminder')}
+            </button>
+          </article>
+        ))}
+      </div>
+      {!friendships.loading && !friendships.error && !friends.length && (
+        <p className="empty-state">
+          {t(
+            '还没有好友。搜索另一个已注册账户的用户名开始。',
+            'No friends yet. Search another registered username to get started.',
+          )}
+        </p>
+      )}
+      {selectedFriend && (
+        <FriendPlants
+          friend={selectedFriend}
+          t={t}
+          language={language}
+          onClose={() => setSelectedFriend(null)}
+          onPlant={(plant) => {
+            setSelectedFriend(null)
+            onPlant(plant)
+          }}
+        />
       )}
     </>
   )

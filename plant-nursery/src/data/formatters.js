@@ -4,6 +4,7 @@ export function localize(value, language) {
 
 export function formatTime(value, language) {
   return new Intl.DateTimeFormat(language === 'zh' ? 'zh-CN' : 'en-GB', {
+    year: 'numeric',
     month: 'short',
     day: 'numeric',
     hour: '2-digit',

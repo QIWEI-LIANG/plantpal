@@ -3,18 +3,18 @@ import PlantCard from '../components/PlantCard'
 import PlantArt from '../components/PlantArt'
 import CareHistory from '../components/CareHistory'
 import Icon from '../components/Icon'
-import { localize } from '../data/formatters'
 
 export default function HomePage({
   t,
   language,
-  state,
+  user,
+  summary,
+  history,
   myPlants,
   duePlants,
   onNavigate,
   onPlant,
   onCare,
-  view,
 }) {
   const date = new Intl.DateTimeFormat(language === 'zh' ? 'zh-CN' : 'en-GB', {
     month: 'long',
@@ -25,10 +25,7 @@ export default function HomePage({
     <>
       <PageHeading
         eyebrow={date}
-        title={t(
-          `你好，${view === 'owner' ? state.profile.nickname : 'Alex'} ☀`,
-          `Hello, ${view === 'owner' ? state.profile.nickname : 'Alex'} ☀`,
-        )}
+        title={t(`你好，${user.nickname} ☀`, `Hello, ${user.nickname} ☀`)}
         description={t(
           '给生活一点绿，也给自己一点慢下来的时间。',
           'A little green in your day. A little room to slow down.',
@@ -110,7 +107,7 @@ export default function HomePage({
           <div>
             <span>{t('养护足迹', 'Moments of care')}</span>
             <strong>
-              {state.history.length}
+              {summary.history}
               <small>{t('条带时间的记录', 'timestamped entries')}</small>
             </strong>
           </div>
@@ -136,6 +133,14 @@ export default function HomePage({
               <Icon name="arrow" size={16} />
             </button>
           </div>
+          {!myPlants.length && (
+            <p className="empty-state">
+              {t(
+                '这里还没有植物。从指南添加第一盆，或等待主人授权代管。',
+                'No plants here yet. Add your first plant from a guide, or wait for a care invitation.',
+              )}
+            </p>
+          )}
           <div className="plant-grid home-plant-grid">
             {myPlants.slice(0, 4).map((plant) => (
               <PlantCard
@@ -146,8 +151,8 @@ export default function HomePage({
                 onClick={onPlant}
                 status={
                   duePlants.some((due) => due.id === plant.id)
-                    ? 'check'
-                    : 'done'
+                    ? plant.check_status
+                    : 'scheduled'
                 }
               />
             ))}
@@ -160,15 +165,15 @@ export default function HomePage({
               <h3>{t('遇见一株不认识的植物？', 'Meet a new leafy friend?')}</h3>
               <p>
                 {t(
-                  '试试示例识别，发现下一位绿色伙伴。',
-                  'Try our demo identification and find your next companion.',
+                  '识别待接入，现在可以手动选择品种。',
+                  'Identification is coming later. Choose a species manually for now.',
                 )}
               </p>
             </div>
             <button
               className="icon-button"
               onClick={() => onNavigate('identify')}
-              aria-label={t('体验示例识别', 'Try demo identification')}
+              aria-label={t('查看识别页面', 'Open identification page')}
             >
               <Icon name="arrow" />
             </button>
@@ -197,12 +202,12 @@ export default function HomePage({
                 >
                   <span
                     className="mini-art"
-                    style={{ background: plant.color }}
+                    style={{ background: plant.species.color }}
                   >
-                    <PlantArt type={plant.type} />
+                    <PlantArt type={plant.species.type} />
                   </span>
                   <span>
-                    <strong>{localize(plant.name, language)}</strong>
+                    <strong>{plant.nickname}</strong>
                     <small>{t('检查土壤和叶片', 'Check soil & leaves')}</small>
                   </span>
                   <Icon name="arrow" size={18} />
@@ -233,7 +238,7 @@ export default function HomePage({
               <Icon name="clock" size={18} />
             </div>
             <CareHistory
-              entries={state.history.slice(0, 3)}
+              entries={history}
               t={t}
               language={language}
               showPlant

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import Modal from './Modal'
 import Icon from './Icon'
+import AsyncState from './AsyncState'
+import useMutation from '../hooks/useMutation'
 import { localize } from '../data/formatters'
 
 export default function CareReminder({
@@ -13,7 +15,8 @@ export default function CareReminder({
   const [observation, setObservation] = useState('')
   const [confirmed, setConfirmed] = useState(false)
   const [error, setError] = useState('')
-  function record(outcome) {
+  const mutation = useMutation()
+  async function record(outcome) {
     // 必须先选择观察结果并确认已检查，才允许生成带时间的养护记录。
     if (!observation || !confirmed) {
       setError(
@@ -33,7 +36,7 @@ export default function CareReminder({
       )
       return
     }
-    onRecord(plant, outcome, observation)
+    await mutation.run(() => onRecord(plant, outcome, observation, confirmed))
   }
   return (
     <Modal
@@ -42,16 +45,16 @@ export default function CareReminder({
       onClose={onClose}
     >
       <p className="eyebrow">
-        {localize(plant.name, language)} · {plant.scientific}
+        {plant.nickname} · {plant.species.scientific}
       </p>
       <div className="check-prompt">
         <span className="round-icon">
           <Icon name="leaf" size={26} />
         </span>
         <h3>{t('现在的植物，是什么状态？', 'How is your plant doing?')}</h3>
-        <p>{localize(plant.check, language)}</p>
+        <p>{localize(plant.species.check, language)}</p>
       </div>
-      <fieldset className="observation-options">
+      <fieldset className="observation-options" disabled={mutation.pending}>
         <legend>{t('你的观察', 'Your observation')}</legend>
         {[
           ['dry', '土壤偏干', 'Soil feels dry'],
@@ -79,6 +82,7 @@ export default function CareReminder({
       <label className="confirmation">
         <input
           type="checkbox"
+          disabled={mutation.pending}
           checked={confirmed}
           onChange={(event) => {
             setConfirmed(event.target.checked)
@@ -95,16 +99,29 @@ export default function CareReminder({
           {error}
         </p>
       )}
+      <AsyncState error={mutation.error} t={t} language={language} />
       <div className="care-actions">
-        <button className="button primary" onClick={() => record('watered')}>
+        <button
+          className="button primary"
+          disabled={mutation.pending}
+          onClick={() => record('watered')}
+        >
           <Icon name="drop" />
           {t('已浇水', 'Watered')}
         </button>
-        <button className="button secondary" onClick={() => record('skipped')}>
+        <button
+          className="button secondary"
+          disabled={mutation.pending}
+          onClick={() => record('skipped')}
+        >
           <Icon name="check" />
           {t('暂不需要', 'Not needed')}
         </button>
-        <button className="button secondary" onClick={() => record('later')}>
+        <button
+          className="button secondary"
+          disabled={mutation.pending}
+          onClick={() => record('later')}
+        >
           <Icon name="clock" />
           {t('稍后检查', 'Check later')}
         </button>

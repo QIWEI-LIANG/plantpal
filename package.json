@@ -2,7 +2,7 @@
   "name": "plantpal",
   "private": true,
   "version": "1.0.0",
-  "description": "Plant Pal React prototype",
+  "description": "PlantPal React + Django plant care application",
   "packageManager": "pnpm@12.9.1",
   "engines": {
     "node": "^20.19.0 || ^22.13.0 || >=24"
@@ -11,6 +11,9 @@
     "dev": "pnpm --dir plant-nursery dev",
     "build": "pnpm --dir plant-nursery build",
     "lint": "pnpm --dir plant-nursery lint",
-    "preview": "pnpm --dir plant-nursery preview"
+    "preview": "pnpm --dir plant-nursery preview",
+    "dev:backend": ".\\backend\\.venv\\Scripts\\python.exe backend/manage.py runserver 127.0.0.1:8000",
+    "check:backend": ".\\backend\\.venv\\Scripts\\python.exe backend/manage.py check",
+    "test:backend": ".\\backend\\.venv\\Scripts\\python.exe backend/manage.py test accounts plants community"
   }
 }

@@ -8,6 +8,7 @@ const navigation = [
   { id: 'identify', icon: 'scan', zh: '查找 / 识别', en: 'Find / identify' },
   { id: 'friends', icon: 'friends', zh: '我的好友', en: 'My friends' },
   { id: 'forum', icon: 'forum', zh: '养护论坛', en: 'Community' },
+  { id: 'notifications', icon: 'mail', zh: '站内提醒', en: 'Inbox' },
 ]
 
 export default function AppLayout({
@@ -19,6 +20,7 @@ export default function AppLayout({
   onLanguageChange,
   profile,
   dueCount,
+  unreadCount,
   view,
   onViewChange,
 }) {
@@ -76,7 +78,7 @@ export default function AppLayout({
               }}
             >
               {view === 'owner'
-                ? t('体验代管者视图', 'Try caretaker view')
+                ? t('查看我代管的植物', 'Plants in my care')
                 : t('返回主人视图', 'Back to owner view')}
               <Icon name="arrow" size={16} />
             </button>
@@ -106,14 +108,15 @@ export default function AppLayout({
           <div className="topbar-actions">
             <button
               className="view-toggle"
+              disabled={!profile}
               onClick={() => {
                 onViewChange(view === 'owner' ? 'caretaker' : 'owner')
                 onNavigate('plants')
               }}
             >
               {view === 'owner'
-                ? t('代管视图', 'Caretaker view')
-                : t('主人视图', 'Owner view')}
+                ? t('我代管的', 'In my care')
+                : t('我自己的', 'My own plants')}
             </button>
             <div
               className="language-toggle"
@@ -136,28 +139,26 @@ export default function AppLayout({
             </div>
             <button
               className="icon-button notification-button"
-              onClick={() => onNavigate('reminders')}
-              aria-label={t('打开养护提醒', 'Open care reminders')}
+              onClick={() => onNavigate('notifications')}
+              aria-label={t('打开站内提醒', 'Open inbox')}
             >
               <Icon name="bell" />
-              {dueCount > 0 && <i />}
+              {unreadCount > 0 && <i />}
             </button>
             <button
               className="profile-button"
               onClick={() => onNavigate('settings')}
             >
               <span className="avatar sage">
-                {view === 'caretaker'
-                  ? 'AL'
-                  : profile.nickname.slice(0, 2).toUpperCase()}
+                {profile ? profile.nickname.slice(0, 2).toUpperCase() : '?'}
               </span>
               <span>
                 <strong>
-                  {view === 'caretaker' ? 'Alex' : profile.nickname}
+                  {profile?.nickname || t('登录 / 注册', 'Sign in / Register')}
                 </strong>
                 <small>
                   {view === 'caretaker'
-                    ? t('示例代管者', 'Example caretaker')
+                    ? t('代管者视图', 'Caretaker view')
                     : t('植物爱好者', 'Plant enthusiast')}
                 </small>
               </span>
@@ -165,13 +166,13 @@ export default function AppLayout({
           </div>
         </header>
         <main id="main-content" className="main-content">
-          {view === 'caretaker' && (
+          {profile && view === 'caretaker' && (
             <div className="caretaker-banner">
               <Icon name="shield" />
               <span>
                 {t(
-                  `代管模式 · 正在查看 ${profile.nickname} 的植物、主人说明和养护记录。`,
-                  `Caretaker mode · Viewing ${profile.nickname}’s plants, instructions, and care history.`,
+                  '仅显示明确授权给你的植物。切换视图不会改变登录身份。',
+                  'Only plants explicitly shared with you are shown. Your signed-in identity stays the same.',
                 )}
               </span>
               <button
@@ -188,7 +189,6 @@ export default function AppLayout({
               <Icon name="leaf" size={14} />
               {t('陪伴每一片新叶。', 'A little care. A little growth.')}
             </span>
-
           </footer>
         </main>
       </div>

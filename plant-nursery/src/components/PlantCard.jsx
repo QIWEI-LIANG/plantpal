@@ -10,28 +10,43 @@ export default function PlantCard({
   status,
   guide = false,
 }) {
+  const species = guide ? plant : plant.species
+  const currentStatus = status || plant.check_status
   return (
     <button className="plant-card" onClick={() => onClick(plant)}>
-      <div className="plant-card-image" style={{ background: plant.color }}>
-        <span className={`plant-badge ${status === 'check' ? 'amber' : ''}`}>
+      <div className="plant-card-image" style={{ background: species.color }}>
+        <span
+          className={`plant-badge ${['due', 'overdue'].includes(currentStatus) ? 'amber' : ''}`}
+        >
           {guide
-            ? localize(plant.difficulty, language)
-            : status === 'check'
-              ? t('待检查', 'Check due')
-              : t('已安排检查', 'Check scheduled')}
+            ? localize(species.difficulty, language)
+            : currentStatus === 'overdue'
+              ? t('已逾期', 'Overdue')
+              : currentStatus === 'due'
+                ? t('待检查', 'Check due')
+                : t('已安排检查', 'Check scheduled')}
         </span>
-        <PlantArt type={plant.type} />
+        <PlantArt type={species.type} />
         <span className="plant-open">
           <Icon name="arrow" size={17} />
         </span>
       </div>
       <div className="plant-card-copy">
-        <h3>{localize(plant.name, language)}</h3>
-        <p className="scientific">{plant.scientific}</p>
+        <h3>{guide ? localize(species.name, language) : plant.nickname}</h3>
+        <p className="scientific">
+          {guide
+            ? species.scientific
+            : localize(species.name, language) + ' · ' + species.scientific}
+        </p>
         <div className="plant-meta">
           <Icon name={guide ? 'sun' : 'location'} size={15} />
-          {localize(guide ? plant.light : plant.location, language)}
+          {guide ? localize(species.light, language) : plant.location}
         </div>
+        {!guide && !plant.can_edit && (
+          <p className="small-print">
+            {t('主人', 'Owner')}: {plant.owner.nickname}
+          </p>
+        )}
       </div>
     </button>
   )

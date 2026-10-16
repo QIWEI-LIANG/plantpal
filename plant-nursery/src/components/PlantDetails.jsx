@@ -1,170 +1,175 @@
 import { useState } from 'react'
 import Modal from './Modal'
 import PlantArt from './PlantArt'
+import PlantForm from './PlantForm'
+import PlantAccessPanel from './PlantAccessPanel'
+import HistoryPanel from './HistoryPanel'
+import AsyncState from './AsyncState'
 import Icon from './Icon'
-import CareHistory from './CareHistory'
+import useApiResource from '../hooks/useApiResource'
+import useMutation from '../hooks/useMutation'
+import { api } from '../services/api'
 import { formatTime, localize } from '../data/formatters'
 
 export default function PlantDetails({
-  plant,
+  plantId,
   language,
   t,
-  state,
-  view,
   onClose,
-  onAdd,
   onCare,
-  onSaveNote,
+  onChanged,
+  onDeleted,
 }) {
-  const owned = state.plantIds.includes(plant.id)
-  const originalNote = localize(state.notes[plant.id] ?? plant.note, language)
-  const [note, setNote] = useState(originalNote)
-  const [noteSaved, setNoteSaved] = useState(false)
-  const [added, setAdded] = useState(false)
-  const history = state.history.filter((entry) => entry.plantId === plant.id)
+  const resource = useApiResource('/plants/' + plantId + '/', { poll: 15000 })
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [message, setMessage] = useState('')
+  const deletion = useMutation()
+  const plant = resource.data
+  async function remove() {
+    const result = await deletion.run(() =>
+      api('/plants/' + plantId + '/', { method: 'DELETE' }),
+    )
+    if (result.ok) onDeleted()
+  }
   return (
     <Modal
-      title={localize(plant.name, language)}
+      title={plant?.nickname || t('植物详情', 'Plant details')}
       t={t}
       onClose={onClose}
       className="plant-details"
     >
-      <div className="detail-intro">
-        <div className="detail-art" style={{ background: plant.color }}>
-          <PlantArt type={plant.type} />
-        </div>
-        <div>
-          <span className="tag">{localize(plant.difficulty, language)}</span>
-          <p className="scientific">{plant.scientific}</p>
-          <p className="muted">
-            <Icon name="location" size={16} />{' '}
-            {localize(plant.location, language)}
-          </p>
-          <p>
-            {t(
-              '从观察开始，让照顾更简单。',
-              'Start by observing. Grow with confidence.',
-            )}
-          </p>
-        </div>
-      </div>
-      <div className="detail-care-grid">
-        <div>
-          <Icon name="sun" />
-          <h3>{t('光照', 'Light')}</h3>
-          <p>{localize(plant.light, language)}</p>
-        </div>
-        <div>
-          <Icon name="drop" />
-          <h3>{t('浇水前', 'Before watering')}</h3>
-          <p>{localize(plant.water, language)}</p>
-        </div>
-      </div>
-      <p className="notice">
-        <Icon name="leaf" size={18} />
-        {localize(plant.tip, language)}
-      </p>
-      {!owned && (
-        <button
-          className="button primary full-width"
-          onClick={() => {
-            onAdd(plant)
-            setAdded(true)
-          }}
-          disabled={view === 'caretaker'}
-        >
-          <Icon name="plus" />
-          {t('加入我的植物', 'Add to my plants')}
-        </button>
-      )}
-      {added && (
-        <p className="notice" role="status">
-          {t(
-            '已加入我的植物，可在下面保存代管说明并记录养护。',
-            'Added to my plants. Save owner instructions and record care below.',
-          )}
-        </p>
-      )}
-      {owned && (
+      <AsyncState
+        {...resource}
+        onRetry={resource.reload}
+        t={t}
+        language={language}
+      />
+      {plant && (
         <>
-          <div className="section-heading">
-            <h3>{t('代管说明', 'Owner instructions')}</h3>
-            <span className="tag">
-              {view === 'owner'
-                ? t('主人填写', 'Written by owner')
-                : t('供代管者查看', 'For the caretaker')}
-            </span>
-          </div>
-          {view === 'owner' ? (
-            <form
-              onSubmit={(event) => {
-                event.preventDefault()
-                onSaveNote(note.trim())
-                setNoteSaved(true)
-              }}
+          <div className="detail-intro">
+            <div
+              className="detail-art"
+              style={{ background: plant.species.color }}
             >
-              <label className="field-label" htmlFor="owner-note">
-                {t(
-                  '告诉代管者位置、注意事项和不确定时该怎么做。',
-                  'Tell the sitter where it belongs, what to check, and what to do if unsure.',
-                )}
-              </label>
-              <textarea
-                id="owner-note"
-                rows="3"
-                maxLength="600"
-                value={note}
-                onChange={(event) => {
-                  setNote(event.target.value)
-                  setNoteSaved(false)
+              <PlantArt type={plant.species.type} />
+            </div>
+            <div>
+              <span className="tag">
+                {localize(plant.species.name, language)}
+              </span>
+              <p className="scientific">{plant.species.scientific}</p>
+              <p>
+                <Icon name="location" size={16} /> {plant.location}
+              </p>
+              <p className="muted">
+                {t('主人', 'Owner')}: {plant.owner.nickname} (@
+                {plant.owner.username})
+              </p>
+            </div>
+          </div>
+          <div className="detail-care-grid">
+            <div>
+              <Icon name="sun" />
+              <h3>{t('光照', 'Light')}</h3>
+              <p>{localize(plant.species.light, language)}</p>
+            </div>
+            <div>
+              <Icon name="drop" />
+              <h3>{t('浇水前', 'Before watering')}</h3>
+              <p>{localize(plant.species.water, language)}</p>
+            </div>
+          </div>
+          <p className="notice">{localize(plant.species.check, language)}</p>
+          {/* 角色来自服务端权限；代管者只读主人说明，写接口仍会再次验证权限。 */}
+          {plant.can_edit ? (
+            <>
+              <h3>{t('编辑这盆植物', 'Edit this plant')}</h3>
+              <PlantForm
+                initial={plant}
+                t={t}
+                language={language}
+                submitLabel={t('保存植物资料', 'Save plant details')}
+                onSubmit={(body) =>
+                  api('/plants/' + plant.id + '/', { method: 'PATCH', body })
+                }
+                onSuccess={() => {
+                  resource.reload()
+                  onChanged()
+                  setMessage(t('植物资料已保存。', 'Plant details saved.'))
                 }}
               />
-              <div className="note-actions">
-                <small className="muted">{note.length}/600</small>
-                <button className="button secondary" type="submit">
-                  {noteSaved
-                    ? t('已保存 ✓', 'Saved ✓')
-                    : t('保存说明', 'Save instructions')}
-                </button>
-              </div>
-            </form>
+            </>
           ) : (
-            <p className="owner-note">
-              {originalNote ||
-                t(
-                  '主人还没有填写说明；不确定时请先联系主人。',
-                  'No instructions yet. Contact the owner if unsure.',
-                )}
+            <>
+              <h3>{t('主人说明', 'Owner instructions')}</h3>
+              <p className="owner-note">
+                {plant.owner_notes ||
+                  t(
+                    '主人还没有填写说明，不确定时请联系主人。',
+                    'No instructions yet. Contact the owner if unsure.',
+                  )}
+              </p>
+            </>
+          )}
+          {message && (
+            <p className="notice" role="status">
+              {message}
             </p>
           )}
-          <div className="section-heading">
-            <h3>{t('养护历史', 'Care history')}</h3>
-            <span className="muted">
-              {history.length} {t('条记录', 'entries')}
-            </span>
-          </div>
-          <CareHistory entries={history} t={t} language={language} />
           <div className="detail-bottom">
             <p className="muted">
               {t('下次检查', 'Next check')}:{' '}
-              {formatTime(
-                state.reminders[plant.id] || new Date().toISOString(),
-                language,
-              )}
+              {formatTime(plant.next_check_at, language)}
             </p>
             <button className="button primary" onClick={() => onCare(plant)}>
               <Icon name="drop" />
               {t('检查并记录', 'Check & record')}
             </button>
           </div>
+          <HistoryPanel plantId={plant.id} t={t} language={language} />
+          {plant.can_edit && (
+            <>
+              <PlantAccessPanel plantId={plant.id} t={t} language={language} />
+              <div className="delete-panel">
+                {confirmDelete ? (
+                  <>
+                    <p>
+                      {t(
+                        '确定删除这盆植物？它的养护历史和代管授权也会删除，无法撤销。',
+                        'Delete this plant? Its care history and access grants will also be deleted. This cannot be undone.',
+                      )}
+                    </p>
+                    <div className="care-actions">
+                      <button
+                        className="button danger"
+                        disabled={deletion.pending}
+                        onClick={remove}
+                      >
+                        {t('确认删除', 'Confirm deletion')}
+                      </button>
+                      <button
+                        className="button secondary"
+                        disabled={deletion.pending}
+                        onClick={() => setConfirmDelete(false)}
+                      >
+                        {t('取消', 'Cancel')}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <button
+                    className="button secondary"
+                    onClick={() => setConfirmDelete(true)}
+                  >
+                    {t('删除这盆植物', 'Delete this plant')}
+                  </button>
+                )}
+                <AsyncState error={deletion.error} t={t} language={language} />
+              </div>
+            </>
+          )}
         </>
       )}
-      <p className="small-print">
-        {t(
-          '养护信息为课堂演示内容，请结合植物实际状况判断。',
-          'Care information is for this classroom prototype. Consider the actual plant conditions.',
-        )}
-      </p>
     </Modal>
   )
 }

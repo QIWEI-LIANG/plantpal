@@ -2,24 +2,20 @@ import { useState } from 'react'
 import PageHeading from '../components/PageHeading'
 import SearchField from '../components/SearchField'
 import PlantCard from '../components/PlantCard'
+import AsyncState from '../components/AsyncState'
 import Icon from '../components/Icon'
-import { plantData } from '../data/plantData'
+import useApiResource from '../hooks/useApiResource'
 
-export default function GuidesPage({ t, language, onPlant, onNavigate }) {
+export default function GuidesPage({ t, language, onSpecies, onNavigate }) {
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('all')
-  const filtered = plantData.filter((plant) => {
-    const matches = `${plant.name.zh} ${plant.name.en} ${plant.scientific}`
-      .toLowerCase()
-      .includes(query.trim().toLowerCase())
-    return (
-      matches &&
-      (filter === 'all' ||
-        (filter === 'easy'
-          ? ['snake', 'zz', 'pothos', 'monstera'].includes(plant.id)
-          : ['snake', 'zz'].includes(plant.id)))
-    )
-  })
+  const resource = useApiResource(
+    '/species/?search=' +
+      encodeURIComponent(query.trim()) +
+      '&category=' +
+      filter,
+    { all: true },
+  )
   return (
     <>
       <PageHeading
@@ -38,16 +34,16 @@ export default function GuidesPage({ t, language, onPlant, onNavigate }) {
           </h2>
           <p>
             {t(
-              '搜索中文名、英文名或学名，点击植物查看养护建议。',
-              'Search by Chinese, English, or scientific name. Open a card for care notes.',
+              '搜索中文名、英文名或学名，点击品种查看指南并添加一盆植物。',
+              'Search by Chinese, English or scientific name. Open a species to read its guide and add a plant.',
             )}
           </p>
           <SearchField
             value={query}
             onChange={setQuery}
             placeholder={t(
-              '搜索植物，例如：龟背竹 / Monstera',
-              'Search plants, e.g. Monstera / 龟背竹',
+              '搜索植物，例如：绿萝 / Pothos',
+              'Search plants, e.g. Pothos / 绿萝',
             )}
           />
         </div>
@@ -70,28 +66,36 @@ export default function GuidesPage({ t, language, onPlant, onNavigate }) {
           ))}
         </div>
         <span className="muted">
-          {filtered.length} {t('份指南', 'guides')}
+          {resource.data?.length || 0} {t('份指南', 'guides')}
         </span>
       </div>
-      <div className="plant-grid">
-        {filtered.map((plant) => (
-          <PlantCard
-            key={plant.id}
-            plant={plant}
-            language={language}
-            t={t}
-            onClick={onPlant}
-            guide
-          />
-        ))}
-      </div>
-      {!filtered.length && (
+      <AsyncState
+        {...resource}
+        onRetry={resource.reload}
+        t={t}
+        language={language}
+      />
+      {resource.data && (
+        <div className="plant-grid">
+          {resource.data.map((plant) => (
+            <PlantCard
+              key={plant.id}
+              plant={plant}
+              language={language}
+              t={t}
+              onClick={onSpecies}
+              guide
+            />
+          ))}
+        </div>
+      )}
+      {resource.data?.length === 0 && (
         <div className="empty-state">
-          <h3>{t('没有找到匹配的植物', 'No matching plants')}</h3>
+          <h3>{t('没有找到匹配的品种', 'No matching species')}</h3>
           <p>
             {t(
-              '目前收录 6 种室内植物，试试其他名称或“全部植物”。',
-              'Six indoor plants are included. Try another name or select “All plants”.',
+              '试试其他名称或清除筛选；首次运行请初始化品种数据。',
+              'Try another name or clear the filters. Seed species data on first setup.',
             )}
           </p>
           <button
@@ -111,8 +115,8 @@ export default function GuidesPage({ t, language, onPlant, onNavigate }) {
           <h3>{t('只有照片，没有名字？', 'A photo, but no name?')}</h3>
           <p>
             {t(
-              '可以体验明确标注的示例识别流程。',
-              'Explore the clearly labeled demonstration flow.',
+              '植物识别待接入，目前可以预览图片并手动选品种。',
+              'Identification is coming later. Preview a photo and choose a species manually.',
             )}
           </p>
         </div>
@@ -120,7 +124,7 @@ export default function GuidesPage({ t, language, onPlant, onNavigate }) {
           className="button secondary"
           onClick={() => onNavigate('identify')}
         >
-          {t('示例识别', 'Demo identification')}
+          {t('查看识别页面', 'Open identification')}
         </button>
       </div>
     </>

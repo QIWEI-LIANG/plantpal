@@ -1,11 +1,5 @@
 import Icon from './Icon'
-import { plantData } from '../data/plantData'
-import {
-  formatTime,
-  localize,
-  observationText,
-  outcomeText,
-} from '../data/formatters'
+import { formatTime, observationText, outcomeText } from '../data/formatters'
 
 export default function CareHistory({
   entries,
@@ -42,17 +36,14 @@ export default function CareHistory({
             <strong>
               {showPlant && (
                 <>
-                  {localize(
-                    plantData.find((plant) => plant.id === entry.plantId).name,
-                    language,
-                  )}{' '}
-                  ·{' '}
+                  {entry.plant_name} · {entry.plant_location} ·{' '}
                 </>
               )}
               {outcomeText(entry.outcome, language)}
             </strong>
             <p>
-              {observationText(entry.observation, language)} · {entry.actor}
+              {observationText(entry.observation, language)} ·{' '}
+              {entry.actor.nickname} (@{entry.actor.username})
               {entry.role === 'caretaker' && ` (${t('代管者', 'caretaker')})`}
             </p>
             <time dateTime={entry.timestamp}>

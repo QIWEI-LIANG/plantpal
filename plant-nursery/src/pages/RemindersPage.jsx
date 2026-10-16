@@ -1,19 +1,21 @@
 import PageHeading from '../components/PageHeading'
 import PlantArt from '../components/PlantArt'
+import HistoryPanel from '../components/HistoryPanel'
 import Icon from '../components/Icon'
-import CareHistory from '../components/CareHistory'
 import { localize, formatTime } from '../data/formatters'
 
 export default function RemindersPage({
   t,
   language,
   myPlants,
-  duePlants,
-  state,
+  summary,
+  scope,
   onCare,
 }) {
+  const due = myPlants.filter((plant) => plant.check_status === 'due')
+  const overdue = myPlants.filter((plant) => plant.check_status === 'overdue')
   const scheduled = myPlants.filter(
-    (plant) => !duePlants.some((due) => due.id === plant.id),
+    (plant) => plant.check_status === 'scheduled',
   )
   return (
     <>
@@ -29,63 +31,58 @@ export default function RemindersPage({
         <Icon name="leaf" />
         <span>
           {t(
-            '这是检查提醒，不是固定浇水指令。示例检查间隔为 24 小时，暂缓为 2 小时；实际养护请以植物状态为准。提醒仅在网页内显示。',
-            'These are prompts to check, not fixed watering instructions. Demo checks repeat after 24 hours, or 2 hours when postponed. Let actual conditions guide care. Reminders appear in this webpage only.',
+            '提醒是检查提示，不是必须浇水。延后检查为 2 小时，其他结果安排 24 小时后检查。超过安排时间 24 小时标记为逾期；提醒仅在网页内显示。',
+            'A reminder asks you to check, not to water. Postpone by 2 hours, or check again after 24 hours for other outcomes. Checks more than 24 hours late are overdue. In-page reminders only.',
           )}
         </span>
       </div>
-      <div className="section-heading">
-        <h2>{t('现在可以检查', 'Ready to check')}</h2>
-        <span className="tag amber">{duePlants.length}</span>
-      </div>
-      <div className="reminder-grid">
-        {duePlants.map((plant) => (
-          <article className="panel reminder-card" key={plant.id}>
-            <div className="reminder-intro">
-              <span
-                className="reminder-art"
-                style={{ background: plant.color }}
-              >
-                <PlantArt type={plant.type} />
-              </span>
-              <div>
-                <span className="tag amber">{t('待检查', 'Check due')}</span>
-                <h3>{localize(plant.name, language)}</h3>
-                <p className="muted">{localize(plant.location, language)}</p>
-                <small className="muted">
-                  {t('安排时间', 'Scheduled')}:{' '}
-                  {formatTime(
-                    state.reminders[plant.id] || new Date().toISOString(),
-                    language,
-                  )}
-                </small>
-              </div>
-            </div>
-            <p>{localize(plant.check, language)}</p>
-            <button
-              className="button primary full-width"
-              onClick={() => onCare(plant)}
-            >
-              {t('开始检查', 'Start check')}
-              <Icon name="arrow" size={17} />
-            </button>
-          </article>
-        ))}
-      </div>
-      {!duePlants.length && (
-        <div className="empty-state">
-          <Icon name="check" size={36} />
-          <h3>{t('当前没有待检查事项', 'All caught up')}</h3>
-          <p>
-            {t(
-              '下次检查时间在下面，也可以随时主动检查。',
-              'Your next checks are below. You can also check anytime.',
-            )}
-          </p>
-        </div>
-      )}
+      {[
+        [overdue, t('已逾期', 'Overdue'), summary.overdue],
+        [due, t('待检查', 'Ready to check'), summary.due],
+      ].map(([plants, title, count]) => (
+        <section key={title}>
+          <div className="section-heading">
+            <h2>{title}</h2>
+            <span className="tag amber">{count}</span>
+          </div>
+          <div className="reminder-grid">
+            {plants.map((plant) => (
+              <article className="panel reminder-card" key={plant.id}>
+                <div className="reminder-intro">
+                  <span
+                    className="reminder-art"
+                    style={{ background: plant.species.color }}
+                  >
+                    <PlantArt type={plant.species.type} />
+                  </span>
+                  <div>
+                    <h3>{plant.nickname}</h3>
+                    <p className="muted">{plant.location}</p>
+                    <small className="muted">
+                      {formatTime(plant.next_check_at, language)}
+                    </small>
+                  </div>
+                </div>
+                <p>{localize(plant.species.check, language)}</p>
+                <button
+                  className="button primary full-width"
+                  onClick={() => onCare(plant)}
+                >
+                  {t('开始检查', 'Start check')}
+                  <Icon name="arrow" size={17} />
+                </button>
+              </article>
+            ))}
+          </div>
+          {!plants.length && (
+            <p className="small-print">
+              {t('暂无此类检查。', 'No checks in this group.')}
+            </p>
+          )}
+        </section>
+      ))}
       <section className="panel scheduled-panel">
-        <h2>{t('接下来', 'Coming up')}</h2>
+        <h2>{t('未来检查安排', 'Upcoming checks')}</h2>
         {scheduled.length ? (
           scheduled.map((plant) => (
             <div className="scheduled-row" key={plant.id}>
@@ -93,9 +90,11 @@ export default function RemindersPage({
                 <Icon name="clock" />
               </span>
               <div>
-                <strong>{localize(plant.name, language)}</strong>
+                <strong>
+                  {plant.nickname} · {plant.location}
+                </strong>
                 <p className="muted">
-                  {formatTime(state.reminders[plant.id], language)}
+                  {formatTime(plant.next_check_at, language)}
                 </p>
               </div>
               <button
@@ -109,26 +108,14 @@ export default function RemindersPage({
         ) : (
           <p className="muted">
             {t(
-              '完成一次检查后，这里会显示下次时间。',
-              'Complete a check to see the next scheduled time here.',
+              '完成一次检查后，这里会显示下次安排。',
+              'Your next scheduled check appears here after recording care.',
             )}
           </p>
         )}
       </section>
       <section className="panel">
-        <h2>{t('集中养护历史', 'All care history')}</h2>
-        <p className="muted">
-          {t(
-            '每次操作都保存时间、观察结果和操作者。',
-            'Each action records its time, observation, and person.',
-          )}
-        </p>
-        <CareHistory
-          entries={state.history}
-          t={t}
-          language={language}
-          showPlant
-        />
+        <HistoryPanel key={scope} scope={scope} t={t} language={language} />
       </section>
     </>
   )

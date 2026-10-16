@@ -1,0 +1,124 @@
+.auth-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  max-width: 1000px;
+}
+.auth-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: #e8eedf;
+  border-radius: 16px;
+  padding: 30px;
+  margin-bottom: 22px;
+}
+.auth-welcome .plant-art {
+  width: 240px;
+  max-width: 100%;
+}
+.auth-welcome p {
+  color: #718565;
+  font-size: 13px;
+  margin: 15px 0 25px;
+}
+.pagination,
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.pagination {
+  justify-content: center;
+  margin: 22px 0;
+  font-size: 12px;
+}
+.scheduled-row > .row-actions {
+  margin-left: auto;
+}
+.inline-form {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.inline-form > label {
+  flex: 1;
+  min-width: 0;
+}
+.inline-form .button {
+  margin-bottom: 10px;
+}
+.inline-form select {
+  margin-top: 10px;
+}
+.access-panel,
+.history-panel {
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+}
+.delete-panel {
+  margin-top: 25px;
+  border-top: 1px solid #eddfd5;
+  padding-top: 20px;
+}
+.delete-panel p {
+  font-size: 13px;
+  color: #99694c;
+  margin-bottom: 12px;
+}
+.button.danger {
+  background: #a55c43;
+  color: #fff;
+}
+.stack-form + .notice {
+  margin-top: 18px;
+}
+.form-error .button {
+  margin-top: 10px;
+}
+.post-body,
+.notification-card > p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.notification-card .row-actions {
+  margin-top: 18px;
+}
+.friend-card > .text-button {
+  margin-top: 16px;
+}
+.friend-card,
+.scheduled-row > div,
+.detail-intro > div,
+.post-author > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.plant-card-copy h3,
+.plant-meta,
+.detail-intro p {
+  overflow-wrap: anywhere;
+}
+.scheduled-row {
+  flex-wrap: wrap;
+}
+@media (max-width: 760px) {
+  .auth-grid {
+    grid-template-columns: 1fr;
+  }
+  .auth-welcome {
+    display: none;
+  }
+  .inline-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .scheduled-row > .row-actions {
+    margin-left: 0;
+  }
+}
