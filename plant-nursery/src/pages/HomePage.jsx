@@ -1,6 +1,7 @@
 import PageHeading from '../components/PageHeading'
 import PlantCard from '../components/PlantCard'
 import PlantArt from '../components/PlantArt'
+import PlantImage from '../components/PlantImage'
 import CareHistory from '../components/CareHistory'
 import Icon from '../components/Icon'
 
@@ -157,7 +158,11 @@ export default function HomePage({
               />
             ))}
           </div>
-          <div className="discover-banner">
+          <button
+            type="button"
+            className="discover-banner"
+            onClick={() => onNavigate('identify')}
+          >
             <div className="discover-icon">
               <Icon name="scan" size={27} />
             </div>
@@ -170,14 +175,10 @@ export default function HomePage({
                 )}
               </p>
             </div>
-            <button
-              className="icon-button"
-              onClick={() => onNavigate('identify')}
-              aria-label={t('查看识别页面', 'Open identification page')}
-            >
+            <span className="icon-button" aria-hidden="true">
               <Icon name="arrow" />
-            </button>
-          </div>
+            </span>
+          </button>
         </div>
         <aside className="home-right">
           <section className="panel daily-panel">
@@ -204,7 +205,7 @@ export default function HomePage({
                     className="mini-art"
                     style={{ background: plant.species.color }}
                   >
-                    <PlantArt type={plant.species.type} />
+                    <PlantImage plant={plant} />
                   </span>
                   <span>
                     <strong>{plant.nickname}</strong>

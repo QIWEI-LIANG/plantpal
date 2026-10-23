@@ -61,19 +61,182 @@
   padding-top: 22px;
   border-top: 1px solid var(--border);
 }
-.delete-panel {
-  margin-top: 25px;
-  border-top: 1px solid #eddfd5;
-  padding-top: 20px;
-}
-.delete-panel p {
-  font-size: 13px;
-  color: #99694c;
-  margin-bottom: 12px;
-}
 .button.danger {
-  background: #a55c43;
+  background: #b42332;
   color: #fff;
+}
+.button.danger:hover:not(:disabled) {
+  background: #961e2a;
+}
+.button.danger-outline {
+  color: #b42332;
+  background: #fff4f4;
+  border: 1px solid #cc3344;
+  border-radius: 4px;
+}
+.button.danger-outline:hover {
+  background: #ffe4e7;
+}
+.modal {
+  padding: 0;
+  overflow: hidden;
+}
+.modal[open] {
+  display: flex;
+  flex-direction: column;
+}
+.modal-header {
+  padding: 20px 28px;
+  margin: 0;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  background: #fffefb;
+}
+.modal-header h2 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.modal-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 24px 28px 28px;
+  scrollbar-gutter: stable;
+}
+.plant-overview {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr) 220px;
+  gap: 18px;
+  align-items: start;
+}
+.plant-overview .detail-art,
+.plant-overview .detail-art .plant-art {
+  width: 130px;
+  height: 155px;
+}
+.plant-detail-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.next-check-field {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  color: #365f43;
+  font-size: 13px;
+  font-weight: 650;
+}
+.next-check-field input {
+  min-width: 0;
+  font-size: 12px;
+  padding: 10px 8px !important;
+}
+.next-check-field small {
+  color: #65725e;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.7;
+}
+.confirm-dialog {
+  width: min(480px, calc(100% - 32px));
+}
+.confirm-dialog .care-actions {
+  justify-content: flex-end;
+  margin-bottom: 0;
+}
+.cover-field {
+  display: grid;
+  gap: 12px;
+}
+.cover-preview {
+  width: min(240px, 100%);
+  height: 160px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #edf2e7;
+}
+.cover-preview img,
+.plant-cover {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.detail-art,
+.reminder-art,
+.plant-card-image {
+  overflow: hidden;
+}
+.cover-upload {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+.cover-upload input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.cover-upload:focus-within {
+  outline: 3px solid #87a977;
+  outline-offset: 3px;
+}
+.discover-banner {
+  width: 100%;
+  text-align: left;
+}
+.discover-banner > .icon-button {
+  margin-left: auto;
+}
+.discover-banner:hover {
+  background: #e5eddb;
+  border-color: #a8bc96;
+}
+.scheduled-panel h2,
+.care-history-panel h3 {
+  color: #294e3a;
+  font-size: 19px;
+}
+.scheduled-row strong {
+  color: #294e3a;
+  font-size: 15px;
+}
+.scheduled-time {
+  color: #245e96;
+  font-size: 14px;
+  font-weight: 650;
+  margin-top: 5px;
+}
+.history-entry strong {
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.7;
+}
+.history-entry.watered strong {
+  color: #21658c;
+}
+.history-entry.skipped strong {
+  color: #38643b;
+}
+.history-entry.later strong {
+  color: #956014;
+}
+.history-entry p {
+  color: #4e5e51;
+  font-size: 12px;
+}
+.history-entry time {
+  display: inline-block;
+  color: #52687e;
+  background: #eef3f8;
+  border-radius: 4px;
+  padding: 2px 7px;
+  margin-top: 5px;
+  font-size: 12px;
 }
 .stack-form + .notice {
   margin-top: 18px;
@@ -120,5 +283,26 @@
   }
   .scheduled-row > .row-actions {
     margin-left: 0;
+  }
+  .modal-header {
+    padding: 16px 20px;
+  }
+  .modal-body {
+    padding: 20px;
+  }
+  .plant-overview {
+    grid-template-columns: 110px minmax(0, 1fr);
+  }
+  .plant-overview .detail-art,
+  .plant-overview .detail-art .plant-art {
+    width: 110px;
+    height: 130px;
+  }
+  .plant-detail-actions {
+    grid-column: 1 / -1;
+    align-items: flex-end;
+  }
+  .plant-detail-actions > * {
+    width: min(280px, 100%);
   }
 }

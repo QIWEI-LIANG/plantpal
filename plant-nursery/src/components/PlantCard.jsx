@@ -1,4 +1,5 @@
 import PlantArt from './PlantArt'
+import PlantImage from './PlantImage'
 import Icon from './Icon'
 import { localize } from '../data/formatters'
 
@@ -26,7 +27,11 @@ export default function PlantCard({
                 ? t('待检查', 'Check due')
                 : t('已安排检查', 'Check scheduled')}
         </span>
-        <PlantArt type={species.type} />
+        {guide ? (
+          <PlantArt type={species.type} />
+        ) : (
+          <PlantImage plant={plant} />
+        )}
         <span className="plant-open">
           <Icon name="arrow" size={17} />
         </span>

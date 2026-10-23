@@ -1,7 +1,11 @@
 import uuid
+from pathlib import Path
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+
+def plant_cover_path(instance, filename):
+    return f"plant-covers/{instance.pk}/{uuid.uuid4().hex}{Path(filename).suffix.lower()}"
 
 class PlantSpecies(models.Model):
     slug = models.SlugField(unique=True)
@@ -31,6 +35,7 @@ class UserPlant(models.Model):
     nickname = models.CharField(max_length=80)
     location = models.CharField(max_length=120)
     owner_notes = models.TextField(blank=True, max_length=600)
+    cover = models.ImageField(upload_to=plant_cover_path, blank=True, null=True)
     next_check_at = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -6,17 +6,65 @@ React + Vite 前端、Django REST Framework 后端的本地全栈项目。业务
 
 ## 当前功能与限制
 
-- 注册、登录、退出、当前账户及昵称/邮箱编辑。
-- 中英文品种搜索和养护指南；每盆植物独立新增、编辑、删除，拥有自己的 UUID、位置、主人说明和历史。
+- 注册（含确认密码）、登录、退出、当前账户及昵称/邮箱编辑。
+- 中英文品种搜索和养护指南；每盆植物独立新增、编辑、删除，拥有自己的 UUID、位置、主人说明和历史。植物详情右上侧提供红色删除按钮，删除前再次确认。
+- 支持上传 JPG/PNG/WebP 作为盆栽封面（最大 5 MB、2500 万像素），可更换或恢复默认插画；封面只向主人及当前获授权的代管者提供。所有弹窗的关闭按钮固定在顶部，内容独立滚动。
+- 可在植物详情的删除按钮下方修改“下次检查”时间，点击“保存植物资料”生效；提醒按保存的时间分类，未来安排按时间排序。首页识别入口整张卡片可点击。
 - 首页统计、待检查/逾期/未来安排；观察土壤并确认后记录养护，服务端原子更新历史和下次检查时间。
 - 好友申请与处理、逐盆代管授权和撤销；好友关系本身不共享植物。代管者可查看和记录养护，不能编辑、删除或再次授权。
 - 站内提醒与已读状态、纯文本论坛帖子、点赞和反馈；中英文界面。
 - **植物识别尚未接入**：目前只有本地图片预览和手动选择品种，不上传图片、不调用识别服务，也不生成模拟识别结果。
 - 未实现邮件/短信、后台推送、实时聊天或生产部署；SQLite 用于本地开发，尚未进行生产并发压力验证。页面关闭后不会继续发送提醒。
 
+## 数据库：已接入 SQLite
+
+项目已有完整的数据库持久化实现，无需新增数据库。前端通过 `/api` 调用 Django，后端通过 ORM 读写 SQLite；刷新页面或重启服务后，已保存的业务数据仍然保留。浏览器 localStorage 只保存语言偏好。
+
+- 配置位置：[`backend/config/settings.py`](backend/config/settings.py) 中的 `DATABASES`。
+- 默认文件：`backend/db.sqlite3`；可通过 `backend/.env` 的 `DJANGO_DB_NAME` 修改，相对路径以 `backend/` 为基准。
+- 初始化方式：`migrate` 创建表，`seed_plants` 补充 6 个共享品种；完整命令见下文“首次安装”。无需安装 MySQL、PostgreSQL 或独立 SQLite 服务。
+- 版本管理：提交模型、迁移文件及品种种子数据；实际数据库文件和 `.env` 已由 `.gitignore` 排除。
+
+### 业务表与用途
+
+| 数据表 | 对应模型 | 保存内容 |
+| --- | --- | --- |
+| `accounts_user` | `User` | 账户、密码哈希、昵称、邮箱 |
+| `plants_plantspecies` | `PlantSpecies` | 中英文品种信息和养护指南 |
+| `plants_userplant` | `UserPlant` | 每盆植物的 UUID、主人、昵称、位置、说明、封面文件路径和下次检查时间 |
+| `plants_plantaccess` | `PlantAccess` | 逐盆代管授权及有效状态 |
+| `plants_carelog` | `CareLog` | 养护人、身份、土壤观察、处理结果和服务端时间 |
+| `community_friendship` | `Friendship` | 好友申请、发起人和处理状态 |
+| `community_post` | `Post` | 帖子作者、标题、正文和发布时间 |
+| `community_like` | `Like` | 用户对帖子的点赞关系 |
+| `community_notification` | `Notification` | 收发人、关联植物、提醒内容及已读状态 |
+| `community_feedback` | `Feedback` | 用户反馈及提交时间 |
+
+Django 另建 Session、权限、管理日志和迁移记录等系统表。盆栽通过外键关联主人和品种，养护记录与代管授权关联具体盆栽；用户名、品种 slug、代管关系、好友用户对及点赞关系设有唯一约束。养护记录还通过数据库约束限制观察/处理结果，并禁止对非干燥土壤记录“已浇水”。
+
+### 检查与日常维护
+
+以下命令在仓库根目录执行，使用已安装依赖的后端虚拟环境：
+
+```powershell
+# 显示当前配置实际使用的数据库路径
+.\backend\.venv\Scripts\python.exe backend/manage.py shell -c "from django.conf import settings; print(settings.DATABASES['default']['NAME'])"
+# [X] 表示迁移已应用；migrate --check 无输出且退出码为 0 表示无待应用迁移
+.\backend\.venv\Scripts\python.exe backend/manage.py showmigrations
+.\backend\.venv\Scripts\python.exe backend/manage.py migrate --check
+# SQLite 完整性检查应返回 [('ok',)]；外键检查应返回 []
+.\backend\.venv\Scripts\python.exe backend/manage.py shell -c "from django.db import connection; c = connection.cursor(); c.execute('PRAGMA integrity_check'); print(c.fetchall()); c.execute('PRAGMA foreign_key_check'); print(c.fetchall())"
+```
+
+模型变更后，先执行 `makemigrations` 生成并提交迁移，再执行 `migrate` 更新数据库。更新代码后先检查并应用仓库已有迁移，不要删除数据库重建。`seed_plants` 可重复运行，不覆盖已有品种编辑。
+
+备份时先停止 Django 及其他访问该数据库的进程，再将**实际配置路径**下的 SQLite 文件及 `backend/media/` 封面目录一起复制到仓库外的备份目录。恢复前同样停止相关进程并备份当前数据，再恢复数据库及对应封面文件，执行 `migrate` 和上述完整性检查。`.env` 单独保管，保持 `DJANGO_SECRET_KEY` 稳定。
+
+2026-10-23 检查结果：本地 `backend/db.sqlite3` 存在，以上 10 张业务表齐全，包含 6 个品种；全部迁移（含 `plants.0002_userplant_cover`）已应用，模型与迁移一致，SQLite 完整性检查为 `ok`，无外键违规，30 项后端测试通过。添加封面字段前已备份数据库，并核对原有业务记录保持一致。
+
 ## 技术栈与目录
 
-本次验证环境：Windows PowerShell、Python 3.11.6、Node.js 24.10.0、pnpm 12.9.1。现有锁文件解析为 React/React DOM 19.3.0、Vite 8.3.2；后端直接依赖固定为 Django 5.2.18、Django REST Framework 3.18.3、python-dotenv 1.2.4。数据库使用 Python 内置 SQLite 驱动，无需另外安装数据库服务。
+本次验证环境：Windows PowerShell、Python 3.11.6、Node.js 24.10.0、pnpm 12.9.1。现有锁文件解析为 React/React DOM 19.3.0、Vite 8.3.2；后端直接依赖固定为 Django 5.2.18、Django REST Framework 3.18.3、python-dotenv 1.2.4、Pillow 13.0.0。数据库使用 Python 内置 SQLite 驱动，无需另外安装数据库服务。
 
 Node 版本要求：`^20.19.0 || ^22.13.0 || >=24`。前端沿用 pnpm 和 `pnpm-lock.yaml`；不要混用 npm 生成另一份锁文件。后端 `requirements.txt` 固定直接依赖，`requirements-lock.txt` 同时固定间接依赖，安装时使用后者。
 
@@ -39,6 +87,7 @@ D:\GitHub\plantpal\
 │   │   ├── seed_data.json      # 6 个品种的初始化数据
 │   │   └── management/commands/seed_plants.py
 │   ├── community/              # 好友、帖子、点赞、站内提醒、反馈与测试
+│   ├── media/                  # 用户上传的植物封面，不提交
 │   ├── .venv/                  # 本地重建的虚拟环境，不提交
 │   └── db.sqlite3              # 默认本地数据库，不提交
 └── plant-nursery/
@@ -171,15 +220,19 @@ Set-Location .\backend
 
 构建后，在仓库根目录执行 `pnpm preview`，访问 http://127.0.0.1:4173/；仍需启动 Django。当前预览配置也代理 `/api`，不是生产部署方案。
 
-本次迁移实际验证：两份 pnpm 锁文件的冻结安装、后端锁定依赖安装、前端 lint/build、Django check、模型与 migration 一致性、本地已应用迁移检查、pip check、23 项后端测试均通过。另在独立临时数据库执行了全部迁移和品种初始化，并通过根目录脚本启动前后端，验证前端 HTML、Vite API 代理、品种列表、CSRF/Session、注册/登录/退出、盆栽创建、养护记录及重新登录后的读取，以及 Admin 登录页。原数据库和 `.env` 内容保持不变。
+此前工作区迁移已验证：两份 pnpm 锁文件的冻结安装、后端锁定依赖安装、前端 lint/build、Django check、模型与 migration 一致性、本地已应用迁移检查、pip check、原有 23 项后端测试。另在独立临时数据库执行了全部迁移和品种初始化，并验证前端 HTML、Vite API 代理、品种列表、CSRF/Session、注册/登录/退出、盆栽创建、养护记录及重新登录后的读取，以及 Admin 登录页。
 
-本次未执行浏览器图形界面的逐页点击、移动端视觉回归或生产部署验证；仓库中旧原型截图不作为这些检查的通过依据。
+2026-10-23 的 `improve.md` 改进已验证前端 lint/build、30 项后端测试、迁移一致性及依赖检查。另使用 Chrome 自动验证注册密码确认、首页整卡跳转、上传封面创建植物、修改检查时间并持久化、桌面/手机尺寸下滚动弹窗仍可关闭、取消/确认删除及未来提醒和养护历史展示。测试数据已清理，现有用户和植物保留；未执行全部页面或生产部署回归，旧原型截图不作为这些检查的依据。
 
 ## 数据与权限说明
 
 `PlantSpecies` 是共享品种，`UserPlant` 是具体盆栽；同品种可以拥有多盆，操作时使用盆栽 UUID。旧 `plant-pal-v1` localStorage 演示数据不会自动导入账户。
 
 养护需要 `observation`、`outcome` 和 `confirmed=true`。只有干土观察可提交已浇水；稍后检查延后 2 小时，其余结果延后 24 小时。时间由服务端记录，界面按浏览器时区显示。代管授权在每次 API 请求中检查，撤销后后续请求立即受限；页面通过轮询和重新聚焦刷新。
+
+注册接口 `POST /api/auth/register/` 必须提交与 `password` 一致的 `password_confirm`。主人可通过 `PATCH /api/plants/{id}/` 修改 `next_check_at`（带时区的 ISO 8601 时间）；界面的时间输入按浏览器本地时区转换后提交。手动安排仅设置下一次检查，之后记录养护仍按上面的 2/24 小时规则生成新安排；没有后台通知。
+
+创建或编辑盆栽时可通过 `multipart/form-data` 的 `cover` 字段上传图片，通过 JSON `cover: null` 恢复插画。封面重新编码为最长边 2000 像素以内的 JPEG，保存于 `backend/media/plant-covers/`，数据库仅保存文件路径。读取使用带 Session 的 `GET /api/plants/{id}/cover/`，每次检查植物权限；更换或删除封面、删除植物后清理旧文件。识别页面的本地预览与封面上传是独立功能。
 
 若需人工验证两个账户，使用独立浏览器配置或普通窗口加隐私窗口，避免共享 Cookie。先建立好友关系，再由主人对某一盆明确授权；代管者应只能看到被授权的盆栽。
 

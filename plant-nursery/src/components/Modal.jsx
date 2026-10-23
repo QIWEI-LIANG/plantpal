@@ -36,7 +36,7 @@ export default function Modal({ title, children, onClose, t, className = '' }) {
           ×
         </button>
       </div>
-      {children}
+      <div className="modal-body">{children}</div>
     </dialog>
   )
 }

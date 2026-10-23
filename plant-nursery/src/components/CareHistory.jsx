@@ -19,7 +19,7 @@ export default function CareHistory({
   return (
     <ol className="history-list">
       {entries.map((entry) => (
-        <li key={entry.id}>
+        <li key={entry.id} className={`history-entry ${entry.outcome}`}>
           <span className={`history-icon ${entry.outcome}`}>
             <Icon
               name={

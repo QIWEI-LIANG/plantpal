@@ -20,6 +20,7 @@ class RegisterSerializer(serializers.Serializer):
     nickname = serializers.CharField(max_length=30)
     email = serializers.EmailField(required=False, allow_blank=True)
     password = serializers.CharField(write_only=True, max_length=128, trim_whitespace=False)
+    password_confirm = serializers.CharField(write_only=True, max_length=128, trim_whitespace=False)
 
     def validate_username(self, value):
         value = value.lower()
@@ -28,6 +29,8 @@ class RegisterSerializer(serializers.Serializer):
         return value
 
     def validate(self, attrs):
+        if attrs["password"] != attrs["password_confirm"]:
+            raise serializers.ValidationError({"password_confirm": "两次密码不一致。 / Passwords do not match."})
         user = User(username=attrs["username"], nickname=attrs["nickname"], email=attrs.get("email", ""))
         try:
             validate_password(attrs["password"], user=user)
@@ -36,6 +39,7 @@ class RegisterSerializer(serializers.Serializer):
         return attrs
 
     def create(self, validated_data):
+        validated_data.pop("password_confirm")
         return User.objects.create_user(**validated_data)
 
 class LoginSerializer(serializers.Serializer):

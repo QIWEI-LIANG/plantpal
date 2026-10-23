@@ -11,6 +11,7 @@ export default function AuthPage({ t, language, onAuthenticated, onNavigate }) {
   const [username, setUsername] = useState('')
   const [nickname, setNickname] = useState('')
   const [password, setPassword] = useState('')
+  const [passwordConfirm, setPasswordConfirm] = useState('')
   const mutation = useMutation()
 
   async function submit(event) {
@@ -18,11 +19,19 @@ export default function AuthPage({ t, language, onAuthenticated, onNavigate }) {
     const result = await mutation.run(() =>
       api('/auth/' + mode + '/', {
         method: 'POST',
-        body: { username, password, ...(mode === 'register' && { nickname }) },
+        body: {
+          username,
+          password,
+          ...(mode === 'register' && {
+            nickname,
+            password_confirm: passwordConfirm,
+          }),
+        },
       }),
     )
     if (result.ok) {
       setPassword('')
+      setPasswordConfirm('')
       onAuthenticated(result.data)
     }
   }
@@ -100,6 +109,27 @@ export default function AuthPage({ t, language, onAuthenticated, onNavigate }) {
               />
             </label>
             {mode === 'register' && (
+              <label>
+                {t('确认密码', 'Confirm password')}
+                <input
+                  type="password"
+                  required
+                  minLength="8"
+                  maxLength="128"
+                  autoComplete="new-password"
+                  value={passwordConfirm}
+                  onChange={(event) => setPasswordConfirm(event.target.value)}
+                />
+              </label>
+            )}
+            {mode === 'register' &&
+              passwordConfirm &&
+              password !== passwordConfirm && (
+                <p className="form-error" role="alert">
+                  {t('两次密码不一致。', 'Passwords do not match.')}
+                </p>
+              )}
+            {mode === 'register' && (
               <p className="small-print">
                 {t(
                   '至少 8 位，避免常见密码、纯数字或与用户名过于相似。新账户从空花园开始。',
@@ -108,7 +138,13 @@ export default function AuthPage({ t, language, onAuthenticated, onNavigate }) {
               </p>
             )}
             <AsyncState error={mutation.error} t={t} language={language} />
-            <button className="button primary" disabled={mutation.pending}>
+            <button
+              className="button primary"
+              disabled={
+                mutation.pending ||
+                (mode === 'register' && password !== passwordConfirm)
+              }
+            >
               {mutation.pending
                 ? t('正在提交…', 'Submitting…')
                 : mode === 'register'

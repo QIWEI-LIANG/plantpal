@@ -57,12 +57,16 @@ export default function SpeciesDetails({
           language={language}
           initial={{ nickname: localize(species.name, language) }}
           submitLabel={t('添加到我的植物', 'Add to my plants')}
-          onSubmit={(body) =>
-            api('/plants/', {
+          onSubmit={(body) => {
+            if (body instanceof FormData) body.set('species', species.id)
+            return api('/plants/', {
               method: 'POST',
-              body: { ...body, species: species.id },
+              body:
+                body instanceof FormData
+                  ? body
+                  : { ...body, species: species.id },
             })
-          }
+          }}
           onSuccess={onCreated}
         />
       ) : (

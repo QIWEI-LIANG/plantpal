@@ -1,4 +1,6 @@
 from django.db.models import Q
+from django.db import transaction
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from rest_framework import generics
 from rest_framework.response import Response
@@ -36,6 +38,7 @@ class PlantDetailView(APIView):
         plant = get_object_or_404(accessible_plants(request.user), pk=pk)
         return Response(PlantReadSerializer(plant, context={"request": request}).data)
 
+    @transaction.atomic
     def patch(self, request, pk):
         plant = get_object_or_404(UserPlant, pk=pk, owner=request.user)
         serializer = PlantWriteSerializer(plant, data=request.data, partial=True)
@@ -47,3 +50,18 @@ class PlantDetailView(APIView):
         plant = get_object_or_404(UserPlant, pk=pk, owner=request.user)
         plant.delete()
         return Response(status=204)
+
+
+class PlantCoverView(APIView):
+    def get(self, request, pk):
+        plant = get_object_or_404(accessible_plants(request.user), pk=pk)
+        if not plant.cover:
+            raise Http404
+        try:
+            cover = plant.cover.open("rb")
+        except FileNotFoundError:
+            raise Http404
+        response = FileResponse(cover, content_type="image/jpeg")
+        response["Cache-Control"] = "private, no-store"
+        response["X-Content-Type-Options"] = "nosniff"
+        return response

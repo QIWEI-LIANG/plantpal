@@ -1,5 +1,5 @@
 import PageHeading from '../components/PageHeading'
-import PlantArt from '../components/PlantArt'
+import PlantImage from '../components/PlantImage'
 import HistoryPanel from '../components/HistoryPanel'
 import Icon from '../components/Icon'
 import { localize, formatTime } from '../data/formatters'
@@ -14,9 +14,9 @@ export default function RemindersPage({
 }) {
   const due = myPlants.filter((plant) => plant.check_status === 'due')
   const overdue = myPlants.filter((plant) => plant.check_status === 'overdue')
-  const scheduled = myPlants.filter(
-    (plant) => plant.check_status === 'scheduled',
-  )
+  const scheduled = myPlants
+    .filter((plant) => plant.check_status === 'scheduled')
+    .sort((a, b) => new Date(a.next_check_at) - new Date(b.next_check_at))
   return (
     <>
       <PageHeading
@@ -31,8 +31,8 @@ export default function RemindersPage({
         <Icon name="leaf" />
         <span>
           {t(
-            '提醒是检查提示，不是必须浇水。延后检查为 2 小时，其他结果安排 24 小时后检查。超过安排时间 24 小时标记为逾期；提醒仅在网页内显示。',
-            'A reminder asks you to check, not to water. Postpone by 2 hours, or check again after 24 hours for other outcomes. Checks more than 24 hours late are overdue. In-page reminders only.',
+            '可在植物详情中手动设置下次检查时间。记录养护后，延后检查安排在 2 小时后，其他结果安排在 24 小时后。超过安排时间 24 小时标记为逾期；提醒仅在网页内显示。',
+            'Set the next check time in plant details. After recording care, postponing schedules a check in 2 hours; other outcomes schedule it in 24 hours. Checks more than 24 hours late are overdue. In-page reminders only.',
           )}
         </span>
       </div>
@@ -53,7 +53,7 @@ export default function RemindersPage({
                     className="reminder-art"
                     style={{ background: plant.species.color }}
                   >
-                    <PlantArt type={plant.species.type} />
+                    <PlantImage plant={plant} />
                   </span>
                   <div>
                     <h3>{plant.nickname}</h3>
@@ -93,7 +93,7 @@ export default function RemindersPage({
                 <strong>
                   {plant.nickname} · {plant.location}
                 </strong>
-                <p className="muted">
+                <p className="scheduled-time">
                   {formatTime(plant.next_check_at, language)}
                 </p>
               </div>
@@ -114,7 +114,7 @@ export default function RemindersPage({
           </p>
         )}
       </section>
-      <section className="panel">
+      <section className="panel care-history-panel">
         <HistoryPanel key={scope} scope={scope} t={t} language={language} />
       </section>
     </>

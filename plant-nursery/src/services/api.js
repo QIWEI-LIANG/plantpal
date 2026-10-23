@@ -16,6 +16,7 @@ function csrfCookie() {
 }
 
 export async function api(path, { method = 'GET', body, signal } = {}) {
+  const isFormData = body instanceof FormData
   // 所有业务请求走 Vite 的同源 /api；Session cookie 交给浏览器管理。
   if (!['GET', 'HEAD'].includes(method) && !csrfCookie()) {
     await api('/auth/csrf/', { signal })
@@ -32,12 +33,15 @@ export async function api(path, { method = 'GET', body, signal } = {}) {
       signal: controller.signal,
       headers: {
         Accept: 'application/json',
-        ...(body !== undefined && { 'Content-Type': 'application/json' }),
+        ...(body !== undefined &&
+          !isFormData && { 'Content-Type': 'application/json' }),
         ...(!['GET', 'HEAD'].includes(method) && {
           'X-CSRFToken': csrfCookie(),
         }),
       },
-      ...(body !== undefined && { body: JSON.stringify(body) }),
+      ...(body !== undefined && {
+        body: isFormData ? body : JSON.stringify(body),
+      }),
     })
     const data =
       response.status === 204 ? null : await response.json().catch(() => null)

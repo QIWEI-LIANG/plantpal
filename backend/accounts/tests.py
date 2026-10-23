@@ -24,6 +24,7 @@ class AuthenticationTests(TestCase):
         response = self.client.post("/api/auth/register/", {
             "username": "First_User", "nickname": "First",
             "password": "Unique-garden!42", "email": "first@example.com",
+            "password_confirm": "Unique-garden!42",
         }, format="json")
         self.assertEqual(response.status_code, 201, response.data)
         user = User.objects.get(username="first_user")
@@ -50,9 +51,9 @@ class AuthenticationTests(TestCase):
 
     def test_weak_password_and_duplicate_username_rejected(self):
         self.csrf()
-        self.assertEqual(self.client.post("/api/auth/register/", {"username": "garden", "nickname": "G", "password": "123"}, format="json").status_code, 400)
+        self.assertEqual(self.client.post("/api/auth/register/", {"username": "garden", "nickname": "G", "password": "123", "password_confirm": "123"}, format="json").status_code, 400)
         User.objects.create_user(username="garden", nickname="G", password="Another!pass42")
-        response = self.client.post("/api/auth/register/", {"username": "GARDEN", "nickname": "G", "password": "Another!pass42"}, format="json")
+        response = self.client.post("/api/auth/register/", {"username": "GARDEN", "nickname": "G", "password": "Another!pass42", "password_confirm": "Another!pass42"}, format="json")
         self.assertEqual(response.status_code, 400)
         self.assertEqual(User.objects.count(), 1)
 
@@ -60,4 +61,16 @@ class AuthenticationTests(TestCase):
         self.csrf()
         response = self.client.post("/api/auth/register/", {"username": "new_user", "nickname": "G", "password": "Unique-garden!42"}, format="json", HTTP_ORIGIN="http://evil.example")
         self.assertEqual(response.status_code, 403)
+        self.assertEqual(User.objects.count(), 0)
+
+    def test_registration_requires_matching_password_confirmation(self):
+        self.csrf()
+        data = {"username": "new_gardener", "nickname": "New", "password": "Unique-garden!42"}
+        for confirmation in [None, "A-different-password!42"]:
+            payload = dict(data)
+            if confirmation is not None:
+                payload["password_confirm"] = confirmation
+            response = self.client.post("/api/auth/register/", payload, format="json")
+            self.assertEqual(response.status_code, 400)
+            self.assertIn("password_confirm", response.data["error"]["fields"])
         self.assertEqual(User.objects.count(), 0)

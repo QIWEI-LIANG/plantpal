@@ -12,6 +12,13 @@ export function formatTime(value, language) {
   }).format(new Date(value))
 }
 
+export function toLocalDateTime(value) {
+  if (!value) return ''
+  const date = new Date(value)
+  const pad = (part) => String(part).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
 export function outcomeText(outcome, language) {
   return localize(
     {

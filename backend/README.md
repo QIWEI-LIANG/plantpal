@@ -2,6 +2,14 @@
 
 Django 5.2.18 + Django REST Framework 3.18.3 + SQLite，使用 Python 3.11。实际位置为 `D:\GitHub\plantpal\backend`。完整安装、环境变量、功能限制及迁移验证记录见[根目录 README](../README.md)。
 
+## 数据库状态
+
+已通过 Django ORM 接入 SQLite，默认文件为 `backend/db.sqlite3`，配置见 [`config/settings.py`](config/settings.py) 的 `DATABASES`；`DJANGO_DB_NAME` 可覆盖文件路径。用户、品种、个人盆栽、养护记录、代管授权、好友、帖子、点赞、提醒和反馈均持久化到数据库，无需另外安装数据库服务。
+
+2026-10-23 已确认：10 张业务表齐全、6 个品种已初始化、全部迁移（含封面字段）已应用、模型与迁移一致，SQLite 完整性及外键检查通过，30 项后端测试通过。添加字段前已备份数据库，迁移后原有业务记录保持一致。
+
+业务表清单、实际数据库路径查询、完整性检查及备份恢复说明见[数据库文档](../README.md#数据库已接入-sqlite)。初次安装执行下方 `migrate` 和 `seed_plants`；已有数据库更新代码后执行 `migrate`，保留已有文件。
+
 ## 首次运行（PowerShell）
 
 ```powershell
@@ -40,6 +48,10 @@ API：http://127.0.0.1:8000/api/species/；Admin：http://127.0.0.1:8000/admin/�
 
 `seed_plants` 读取 `plants/seed_data.json`，按唯一 slug 仅补充缺失品种，不覆盖管理员编辑，不生成用户业务数据。已有指南在 Admin 中编辑。养护记录和下次检查时间在同一事务保存。好友关系不自动赋予植物权限，授权撤销在下一次 API 请求时生效。
 
+注册需要 `password_confirm` 与 `password` 一致。主人可修改盆栽 `next_check_at`（带时区的 ISO 时间），提醒按该时间计算；下次记录养护后仍按 2/24 小时规则重新安排。
+
+盆栽创建/编辑接口支持 multipart 的 `cover` 图片字段，JSON `cover: null` 可移除。Pillow 13.0.0 校验 JPG/PNG/WebP（最大 5 MB、2500 万像素），统一方向、去除元数据并保存为最长边不超过 2000 像素的 JPEG。文件保存在 `media/plant-covers/`，备份时需与数据库一起保存。`GET /api/plants/{id}/cover/` 检查主人/有效代管权限，不公开媒体目录；更换、移除或删除盆栽后清理旧封面。
+
 ## 检查与测试（在 backend 目录）
 
 ```powershell
@@ -50,6 +62,6 @@ API：http://127.0.0.1:8000/api/species/；Admin：http://127.0.0.1:8000/admin/�
 .\.venv\Scripts\python.exe -m pip check
 ```
 
-测试使用独立测试数据库。本次迁移以上检查及 23 项测试通过；另外使用临时数据库验证了迁移、品种初始化和通过 Vite 代理的认证/植物/养护流程，未改写原本地数据库。
+测试使用独立测试数据库和临时媒体目录。目前共 30 项测试，包含封面上传、格式/大小限制、读取与修改权限、撤权、文件清理、检查时间与时区、注册确认密码。
 
-当前没有图片识别或上传服务，也没有邮件/短信、后台推送或生产部署配置。虚拟环境、实际环境变量、数据库、用户文件和迁移备份不提交 Git。
+当前支持植物封面上传，尚未接入自动图片识别、邮件/短信、后台推送或生产部署配置。虚拟环境、实际环境变量、数据库、用户文件和迁移备份不提交 Git。

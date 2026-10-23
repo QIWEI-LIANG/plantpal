@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import Modal from './Modal'
-import PlantArt from './PlantArt'
+import PlantImage from './PlantImage'
 import PlantForm from './PlantForm'
 import PlantAccessPanel from './PlantAccessPanel'
 import HistoryPanel from './HistoryPanel'
@@ -9,7 +9,7 @@ import Icon from './Icon'
 import useApiResource from '../hooks/useApiResource'
 import useMutation from '../hooks/useMutation'
 import { api } from '../services/api'
-import { formatTime, localize } from '../data/formatters'
+import { formatTime, localize, toLocalDateTime } from '../data/formatters'
 
 export default function PlantDetails({
   plantId,
@@ -25,6 +25,7 @@ export default function PlantDetails({
   const [message, setMessage] = useState('')
   const deletion = useMutation()
   const plant = resource.data
+  const formId = `plant-form-${plantId}`
   async function remove() {
     const result = await deletion.run(() =>
       api('/plants/' + plantId + '/', { method: 'DELETE' }),
@@ -46,12 +47,12 @@ export default function PlantDetails({
       />
       {plant && (
         <>
-          <div className="detail-intro">
+          <div className="detail-intro plant-overview">
             <div
               className="detail-art"
               style={{ background: plant.species.color }}
             >
-              <PlantArt type={plant.species.type} />
+              <PlantImage plant={plant} />
             </div>
             <div>
               <span className="tag">
@@ -66,25 +67,50 @@ export default function PlantDetails({
                 {plant.owner.username})
               </p>
             </div>
+            <aside className="plant-detail-actions">
+              {plant.can_edit && (
+                <button
+                  type="button"
+                  className="button danger-outline"
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  {t('删除植物', 'Delete plant')}
+                </button>
+              )}
+              {plant.can_edit ? (
+                <label className="next-check-field">
+                  {t('下次检查', 'Next check')}
+                  <input
+                    form={formId}
+                    name="next_check_at"
+                    type="datetime-local"
+                    required
+                    defaultValue={toLocalDateTime(plant.next_check_at)}
+                  />
+                  <small>
+                    {t(
+                      '修改后点击下方“保存植物资料”。',
+                      'Apply with Save plant details below.',
+                    )}
+                  </small>
+                </label>
+              ) : (
+                <div className="next-check-field">
+                  <strong>{t('下次检查', 'Next check')}</strong>
+                  <time dateTime={plant.next_check_at}>
+                    {formatTime(plant.next_check_at, language)}
+                  </time>
+                </div>
+              )}
+            </aside>
           </div>
-          <div className="detail-care-grid">
-            <div>
-              <Icon name="sun" />
-              <h3>{t('光照', 'Light')}</h3>
-              <p>{localize(plant.species.light, language)}</p>
-            </div>
-            <div>
-              <Icon name="drop" />
-              <h3>{t('浇水前', 'Before watering')}</h3>
-              <p>{localize(plant.species.water, language)}</p>
-            </div>
-          </div>
-          <p className="notice">{localize(plant.species.check, language)}</p>
           {/* 角色来自服务端权限；代管者只读主人说明，写接口仍会再次验证权限。 */}
           {plant.can_edit ? (
             <>
               <h3>{t('编辑这盆植物', 'Edit this plant')}</h3>
               <PlantForm
+                formId={formId}
+                showSchedule={false}
                 initial={plant}
                 t={t}
                 language={language}
@@ -117,10 +143,6 @@ export default function PlantDetails({
             </p>
           )}
           <div className="detail-bottom">
-            <p className="muted">
-              {t('下次检查', 'Next check')}:{' '}
-              {formatTime(plant.next_check_at, language)}
-            </p>
             <button className="button primary" onClick={() => onCare(plant)}>
               <Icon name="drop" />
               {t('检查并记录', 'Check & record')}
@@ -128,47 +150,45 @@ export default function PlantDetails({
           </div>
           <HistoryPanel plantId={plant.id} t={t} language={language} />
           {plant.can_edit && (
-            <>
-              <PlantAccessPanel plantId={plant.id} t={t} language={language} />
-              <div className="delete-panel">
-                {confirmDelete ? (
-                  <>
-                    <p>
-                      {t(
-                        '确定删除这盆植物？它的养护历史和代管授权也会删除，无法撤销。',
-                        'Delete this plant? Its care history and access grants will also be deleted. This cannot be undone.',
-                      )}
-                    </p>
-                    <div className="care-actions">
-                      <button
-                        className="button danger"
-                        disabled={deletion.pending}
-                        onClick={remove}
-                      >
-                        {t('确认删除', 'Confirm deletion')}
-                      </button>
-                      <button
-                        className="button secondary"
-                        disabled={deletion.pending}
-                        onClick={() => setConfirmDelete(false)}
-                      >
-                        {t('取消', 'Cancel')}
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <button
-                    className="button secondary"
-                    onClick={() => setConfirmDelete(true)}
-                  >
-                    {t('删除这盆植物', 'Delete this plant')}
-                  </button>
-                )}
-                <AsyncState error={deletion.error} t={t} language={language} />
-              </div>
-            </>
+            <PlantAccessPanel plantId={plant.id} t={t} language={language} />
           )}
         </>
+      )}
+      {confirmDelete && plant?.can_edit && (
+        <Modal
+          title={t('确定删除这盆植物？', 'Delete this plant?')}
+          t={t}
+          className="confirm-dialog"
+          onClose={() => {
+            if (!deletion.pending) setConfirmDelete(false)
+          }}
+        >
+          <p>
+            {t(
+              `删除“${plant.nickname}”后，它的养护历史和代管授权也会删除，无法撤销。`,
+              `Deleting “${plant.nickname}” also removes its care history and access grants. This cannot be undone.`,
+            )}
+          </p>
+          <AsyncState error={deletion.error} t={t} language={language} />
+          <div className="care-actions">
+            <button
+              className="button secondary"
+              disabled={deletion.pending}
+              onClick={() => setConfirmDelete(false)}
+            >
+              {t('取消', 'Cancel')}
+            </button>
+            <button
+              className="button danger"
+              disabled={deletion.pending}
+              onClick={remove}
+            >
+              {deletion.pending
+                ? t('正在删除…', 'Deleting…')
+                : t('确认删除', 'Confirm deletion')}
+            </button>
+          </div>
+        </Modal>
       )}
     </Modal>
   )
